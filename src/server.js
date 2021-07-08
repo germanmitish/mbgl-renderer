@@ -9,6 +9,7 @@ import logger from 'morgan'
 import { version } from '../package.json'
 import { render } from './render'
 
+const fetch = require('node-fetch')
 logger.token('url', (req) => req.path())
 
 const parseListToFloat = (text) => text.split(',').map(Number)
@@ -30,7 +31,7 @@ const PARAMS = {
     token: { isRequired: false, isString: true },
 }
 
-const renderImage = (params, response, next, tilePath) => {
+const renderImage = async (params, response, next, tilePath) => {
     const {
         width,
         height,
@@ -43,7 +44,12 @@ const renderImage = (params, response, next, tilePath) => {
 
     if (typeof style === 'string') {
         try {
-            style = JSON.parse(style)
+            if(style.includes('https://')){
+              console.log('External style')
+              style = await (await fetch(style)).json()
+            }else{
+              style = JSON.parse(style)
+            }
         } catch (jsonErr) {
             console.error('Error parsing JSON style in request: %j', jsonErr)
             return next(
@@ -357,6 +363,23 @@ server.listen(port, () => {
         'Mapbox GL static rendering server started and listening at %s',
         server.url
     )
+})
+
+process.on('uncaughtException', function(err) {
+  console.log('Caught exception: ' + err);
+});
+
+process.on('beforeExit', code => {
+  // Can make asynchronous calls
+  setTimeout(() => {
+    console.log(`Process will exit with code: ${code}`)
+    process.exit(code)
+  }, 100)
+})
+
+process.on('exit', code => {
+  // Only synchronous calls
+  console.log(`Process exited with code: ${code}`)
 })
 
 export default { server }

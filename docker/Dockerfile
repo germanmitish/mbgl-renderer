@@ -10,6 +10,7 @@ COPY package*.json /app/
 
 RUN apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get -y install \
+  procps \
   libcairo2-dev \
   libgles2-mesa-dev \
   libgbm-dev \
