@@ -29,6 +29,7 @@ const PARAMS = {
     bearing: { isRequired: false, isDecimal: true },
     pitch: { isRequired: false, isDecimal: true },
     token: { isRequired: false, isString: true },
+    parcel: { isRequired: false, isInt: true }
 }
 
 const renderImage = async (params, response, next, tilePath) => {
@@ -39,7 +40,9 @@ const renderImage = async (params, response, next, tilePath) => {
         padding = 0,
         bearing = null,
         pitch = null,
+        parcel = null,
     } = params
+
     let { style, zoom = null, center = null, bounds = null, ratio = 1 } = params
 
     if (typeof style === 'string') {
@@ -47,6 +50,146 @@ const renderImage = async (params, response, next, tilePath) => {
             if(style.includes('https://')){
               console.log('External style')
               style = await (await fetch(style)).json()
+              if(parcel){
+                if(Array.isArray(parcel)){
+                  console.log('Highlight parcels', parcel)
+                  const parcelArray = parcel.map(v=>Number(v))
+                  const dimInd = style.layers.findIndex(l=>l.id==="dimensions")
+                  const rdInd = style.layers.findIndex(l=>l.id==="road-label")
+
+                  style.layers[dimInd].filter = ["match", ["get", "parcel_objectid"], parcelArray, true, false ]
+                  
+                  style.layers.splice(rdInd, 0,{
+                    'id':"parcel-line",
+                    'source':"tiles",
+                    'source-layer':"parcels",
+                    'type':"line",
+                    'minzoom':13,
+                    'maxzoom':22,
+                    'paint':{
+                      "line-color": "white",
+                      "line-opacity": 1,
+                      "line-width": 4,
+                    },
+                    'filter':[
+                      "match",
+                      ["id"], parcelArray,
+                      true, false
+                    ]
+                  });
+
+                  style.layers.splice(dimInd, 0,{
+                    'id':"parcel",
+                    'source':"tiles",
+                    'source-layer':"parcels",
+                    'type':"fill",
+                    'paint':{
+                      "fill-opacity": 0.4,
+                      "fill-color": "white",
+                    },
+                    'filter':[
+                      "match",
+                      ["id"], parcelArray,
+                      true, false
+                    ]
+                  });
+
+                  style.layers.push(...[
+                    {
+                      'id':"parcel-label",
+                      'source':"tiles",
+                      'source-layer':"parcels-centroids",
+                      'type':"symbol",
+                      'paint':{
+                        "text-color": "black",
+                        "text-opacity": 0.7,
+                        "text-halo-width": 1,
+                        "text-halo-color": "white",
+                      },
+                      'layout':{
+                        "text-field": ["get", "parcel_no"],
+                        "text-anchor": "bottom",
+                        "text-font": ["Montserrat SemiBold"],
+                        "text-size": 16,
+                        "text-padding": 12,
+                      },
+                      'filter':[
+                        "match",
+                        ["id"], parcelArray,
+                        true, false
+                      ]
+                    }
+                  ])
+                }else{
+                  console.log('Highlight one parcel', parcel)
+                  const dimInd = style.layers.findIndex(l=>l.id==="dimensions")
+                  const rdInd = style.layers.findIndex(l=>l.id==="road-label")
+
+                  style.layers[dimInd].filter = ["==", ["get", "parcel_objectid"], Number(parcel) ]
+                  
+                  style.layers.splice(rdInd, 0,{
+                    'id':"parcel-line",
+                    'source':"tiles",
+                    'source-layer':"parcels",
+                    'type':"line",
+                    'minzoom':13,
+                    'maxzoom':22,
+                    'paint':{
+                      "line-color": "white",
+                      "line-opacity": 1,
+                      "line-width": 4,
+                    },
+                    'filter':[
+                      "match",
+                      ["id"], Number(parcel),
+                      true, false
+                    ]
+                  });
+
+                  style.layers.splice(dimInd, 0,{
+                    'id':"parcel",
+                    'source':"tiles",
+                    'source-layer':"parcels",
+                    'type':"fill",
+                    'paint':{
+                      "fill-opacity": 0.4,
+                      "fill-color": "white",
+                    },
+                    'filter':[
+                      "match",
+                      ["id"], Number(parcel),
+                      true, false
+                    ]
+                  });
+
+                  style.layers.push(...[
+                    {
+                      'id':"parcel-label",
+                      'source':"tiles",
+                      'source-layer':"parcels-centroids",
+                      'type':"symbol",
+                      'paint':{
+                        "text-color": "black",
+                        "text-opacity": 0.7,
+                        "text-halo-width": 1,
+                        "text-halo-color": "white",
+                      },
+                      'layout':{
+                        "text-field": ["get", "parcel_no"],
+                        "text-anchor": "bottom",
+                        "text-font": ["Montserrat SemiBold"],
+                        "text-size": 16,
+                        "text-padding": 12,
+                      },
+                      'filter':[
+                        "match",
+                        ["id"], Number(parcel),
+                        true, false
+                      ]
+                    }
+                  ])
+                }
+              }
             }else{
               style = JSON.parse(style)
             }
