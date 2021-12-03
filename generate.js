@@ -9,6 +9,17 @@ const prettyMilliseconds = require('pretty-ms');
 
 const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
 let totalWorldTiles;
+
+async function genWorld(){
+  const wholeWorld = await generateUrls({minzoom:0, maxzoom:10});
+  totalWorldTiles = wholeWorld.length;
+  console.log(`
+  The whole world consists of ${wholeWorld.length} tiles
+  `);  
+}
+
+
+
 /**
  * 
  * @param {{
@@ -107,11 +118,9 @@ async function generateTiles({
 
 var startTime = performance.now();
 generate({
-  bounds: [-71.12, 42.30, -70.91, 42.38],
   style: './styles/OldStyle.json',
   basePath: './tiles/OldStyle/',
-  maxzoom: 12, 
-  tilesize: 256
+  maxzoom: 10
 }).then((d)=>{
 
   bar.update(d.length);
@@ -130,12 +139,3 @@ generate({
 }).catch((e)=>{
   console.error(e);
 });
-
-async function genWorld(){
-  const wholeWorld = await generateUrls({minzoom:0, maxzoom:10});
-  totalWorldTiles = wholeWorld.length;
-  console.log(`
-  The whole world consists of ${wholeWorld.length} tiles
-  `);  
-}
-
