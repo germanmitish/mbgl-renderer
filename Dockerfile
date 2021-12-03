@@ -41,7 +41,7 @@ ENV DISPLAY=:99
 # Copy just the compiled code
 COPY ./dist/* /app/dist/
 
-COPY ./docker/entrypoint.sh /root
+COPY ./entrypoint.sh /root
 RUN chmod +x /root/entrypoint.sh
 ENTRYPOINT [ "/root/entrypoint.sh" ]
 HEALTHCHECK CMD curl --fail http://localhost:80/health || exit 1
